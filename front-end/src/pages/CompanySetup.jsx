@@ -218,10 +218,25 @@ const CompanySetup = () => {
       setSaveError(null);
     } catch (error) {
       console.error('Error updating company:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        payload: error?.payload,
+      });
       
-      const errorMsg = error?.response?.data?.message || 
-                       error?.message || 
-                       'Failed to update company information. Please try again.';
+      // Handle different error types
+      let errorMsg = 'Failed to update company information. Please try again.';
+      
+      if (error?.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error?.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        // Handle validation errors
+        errorMsg = error.response.data.errors.map(err => err.msg || err.message).join(', ');
+      } else if (error?.message) {
+        errorMsg = error.message;
+      } else if (error?.payload) {
+        errorMsg = typeof error.payload === 'string' ? error.payload : error.payload?.message || errorMsg;
+      }
       
       setSaveError(errorMsg);
       toast.error(errorMsg);

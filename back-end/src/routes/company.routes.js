@@ -58,11 +58,35 @@ router.put(
     body("organization_type").optional(),
     body("team_size").optional(),
     body("about_company").optional(),
-    body("company_website").optional({ checkFalsy: true }).isURL().withMessage("Company website must be a valid URL"),
-    body("map_location_url").optional({ checkFalsy: true }).isURL().withMessage("Map location URL must be a valid URL"),
+    body("company_website").optional({ checkFalsy: true }).custom((value) => {
+      if (!value || value.trim() === '') return true;
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error("Company website must be a valid URL");
+      }
+    }),
+    body("map_location_url").optional({ checkFalsy: true }).custom((value) => {
+      if (!value || value.trim() === '') return true;
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error("Map location URL must be a valid URL");
+      }
+    }),
     body("company_vision").optional(),
     body("headquarter_phone_no").optional({ checkFalsy: true }).custom(isValidPhoneNumber),
-    body("careers_link").optional({ checkFalsy: true }).isURL().withMessage("Careers link must be a valid URL"),
+    body("careers_link").optional({ checkFalsy: true }).custom((value) => {
+      if (!value || value.trim() === '') return true;
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        throw new Error("Careers link must be a valid URL");
+      }
+    }),
   ],
   validate,
   updateCompanyProfile

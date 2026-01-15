@@ -99,6 +99,16 @@ export const updateCompanyProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // Check if company profile exists for this user
+    const companyCheck = await pool.query(
+      "SELECT id FROM company_profile WHERE owner_id = $1",
+      [userId]
+    );
+
+    if (!companyCheck.rows.length) {
+      return next(new AppError("Company profile not found. Please register your company first.", 404));
+    }
+
     // Map API field names to database column names
     const fieldMapping = {
       "company_name": "company_name",
@@ -166,12 +176,17 @@ export const updateCompanyProfile = async (req, res, next) => {
 
     const result = await pool.query(query, [...values, userId]);
 
+    if (!result.rows.length) {
+      return next(new AppError("Company profile not found or update failed", 404));
+    }
+
     res.json({
       success: true,
       company: result.rows[0],
     });
   } catch (error) {
-    next(new AppError(error.message, 500));
+    console.error('Error updating company profile:', error);
+    next(new AppError(error.message || "Failed to update company profile", 500));
   }
 };
 
