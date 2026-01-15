@@ -80,28 +80,6 @@ const Dashboard = () => {
     };
   }, [dispatch, location.pathname, fetchData]); // Refetch when pathname changes
 
-  const fetchJobStats = async () => {
-    try {
-      setLoadingStats(true);
-      const response = await jobApi.getJobStats();
-      setJobStats(response?.data?.stats || {
-        total_jobs: 0,
-        active_jobs: 0,
-        total_applications: 0,
-      });
-    } catch (error) {
-      console.error('Error fetching job stats:', error);
-      // Set default stats on error - don't let this break the page
-      setJobStats({
-        total_jobs: 0,
-        active_jobs: 0,
-        total_applications: 0,
-      });
-    } finally {
-      setLoadingStats(false);
-    }
-  };
-
   const stats = [
     {
       title: 'Total Jobs Posted',
