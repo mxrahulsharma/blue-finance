@@ -40,7 +40,7 @@ const CompanySetup = () => {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm();
+  const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { company, loading } = useSelector((state) => state.company);
@@ -105,18 +105,20 @@ const CompanySetup = () => {
 
   useEffect(() => {
     if (company) {
-      // Pre-fill form with existing company data
-      setValue('company_name', company.company_name || '');
-      setValue('about_company', company.about_company || '');
-      setValue('company_website', company.company_website || '');
-      setValue('industry_type', company.industry_type || '');
-      setValue('organization_type', company.organizations_type || company.organization_type || '');
-      setValue('team_size', company.team_size || '');
-      setValue('company_vision', company.company_vision || '');
-      setValue('map_location_url', company.map_location_url || '');
-      setValue('headquarter_phone_no', company.headquarter_phone_no || '');
-      setValue('careers_link', company.careers_link || '');
-      setValue('social_links', company.social_links || '');
+      // Reset form with company data - this ensures all fields are properly synced
+      reset({
+        company_name: company.company_name || '',
+        about_company: company.about_company || '',
+        company_website: company.company_website || '',
+        industry_type: company.industry_type || '',
+        organization_type: company.organizations_type || company.organization_type || '',
+        team_size: company.team_size || '',
+        company_vision: company.company_vision || '',
+        map_location_url: company.map_location_url || '',
+        headquarter_phone_no: company.headquarter_phone_no || '',
+        careers_link: company.careers_link || '',
+        social_links: company.social_links || '',
+      });
       
       // Set logo and banner previews if they exist
       if (company.company_logo_url) {
@@ -126,7 +128,7 @@ const CompanySetup = () => {
         setBannerFile({ preview: company.company_banner_url });
       }
     }
-  }, [company, setValue]);
+  }, [company, reset]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -185,23 +187,14 @@ const CompanySetup = () => {
       // Store old progress before refresh
       const oldProgress = prevProgressRef.current;
       
-      // Refresh company data to get latest updates
-      await dispatch(fetchCompanyProfile()).unwrap();
+      // Refresh company data to get latest updates from server
+      // This will trigger the useEffect that syncs the form
+      const refreshedCompany = await dispatch(fetchCompanyProfile()).unwrap();
+      console.log('Refreshed company data:', refreshedCompany);
       
-      // Re-sync form with updated data
-      if (result) {
-        setValue('company_name', result.company_name || '');
-        setValue('about_company', result.about_company || '');
-        setValue('company_website', result.company_website || '');
-        setValue('industry_type', result.industry_type || '');
-        setValue('organization_type', result.organizations_type || result.organization_type || '');
-        setValue('team_size', result.team_size || '');
-        setValue('company_vision', result.company_vision || '');
-        setValue('map_location_url', result.map_location_url || '');
-        setValue('headquarter_phone_no', result.headquarter_phone_no || '');
-        setValue('careers_link', result.careers_link || '');
-        setValue('social_links', result.social_links || '');
-      }
+      // Wait a bit for Redux state to propagate and useEffect to run
+      // The useEffect hook will automatically sync the form with the updated company data
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Wait for state to update, then check if progress just reached 100%
       setTimeout(() => {
@@ -212,7 +205,7 @@ const CompanySetup = () => {
         }
         // Update ref with new progress
         prevProgressRef.current = newProgress;
-      }, 1000);
+      }, 500);
       
       toast.success('Company information updated successfully!');
       setSaveError(null);
