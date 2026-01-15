@@ -119,12 +119,16 @@ const DashboardLayout = ({ children }) => {
               variant="contained"
               sx={{
                 backgroundColor: 'white',
-                color: '#1976d2',
+                color: '#667eea',
                 textTransform: 'none',
                 fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
                 '&:hover': {
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: '#f8f9ff',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-2px)',
                 },
+                transition: 'all 0.2s ease',
               }}
               onClick={() => navigate('/dashboard/post-job')}
             >
