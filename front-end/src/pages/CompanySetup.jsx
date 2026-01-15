@@ -112,6 +112,11 @@ const CompanySetup = () => {
       setValue('industry_type', company.industry_type || '');
       setValue('organization_type', company.organizations_type || company.organization_type || '');
       setValue('team_size', company.team_size || '');
+      setValue('company_vision', company.company_vision || '');
+      setValue('map_location_url', company.map_location_url || '');
+      setValue('headquarter_phone_no', company.headquarter_phone_no || '');
+      setValue('careers_link', company.careers_link || '');
+      setValue('social_links', company.social_links || '');
       
       // Set logo and banner previews if they exist
       if (company.company_logo_url) {
@@ -182,6 +187,21 @@ const CompanySetup = () => {
       
       // Refresh company data to get latest updates
       await dispatch(fetchCompanyProfile()).unwrap();
+      
+      // Re-sync form with updated data
+      if (result) {
+        setValue('company_name', result.company_name || '');
+        setValue('about_company', result.about_company || '');
+        setValue('company_website', result.company_website || '');
+        setValue('industry_type', result.industry_type || '');
+        setValue('organization_type', result.organizations_type || result.organization_type || '');
+        setValue('team_size', result.team_size || '');
+        setValue('company_vision', result.company_vision || '');
+        setValue('map_location_url', result.map_location_url || '');
+        setValue('headquarter_phone_no', result.headquarter_phone_no || '');
+        setValue('careers_link', result.careers_link || '');
+        setValue('social_links', result.social_links || '');
+      }
       
       // Wait for state to update, then check if progress just reached 100%
       setTimeout(() => {

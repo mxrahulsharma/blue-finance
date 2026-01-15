@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import { jobApi } from '../api/jobApi';
 const Dashboard = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { company, loading, error } = useSelector((state) => state.company);
   const { user } = useSelector((state) => state.auth);
   const [jobStats, setJobStats] = useState({
@@ -32,18 +33,32 @@ const Dashboard = () => {
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
-  useEffect(() => {
-    // Fetch data on mount
+  const fetchData = async () => {
     try {
-      dispatch(fetchCompanyProfile()).catch(err => {
+      await dispatch(fetchCompanyProfile()).unwrap().catch(err => {
         console.error('Error fetching company profile:', err);
         // Don't block rendering if company fetch fails
       });
       fetchJobStats();
     } catch (error) {
-      console.error('Error in useEffect:', error);
+      console.error('Error in fetchData:', error);
     }
-  }, [dispatch]);
+  };
+
+  useEffect(() => {
+    // Fetch data on mount and when location changes (navigation)
+    fetchData();
+
+    // Refetch when window regains focus (user navigates back to tab)
+    const handleFocus = () => {
+      fetchData();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [dispatch, location.pathname]); // Refetch when pathname changes
 
   const fetchJobStats = async () => {
     try {
