@@ -108,6 +108,7 @@ export const updateCompanyProfile = async (req, res, next) => {
       "company_website": "company_website",
       "map_location_url": "map_location_url",
       "careers_link": "careers_link",
+      "headquarter_phone_no": "headquarter_phone_no",
       "social_links": "social_links",
     };
 
@@ -119,6 +120,7 @@ export const updateCompanyProfile = async (req, res, next) => {
       "company_website",
       "map_location_url",
       "careers_link",
+      "headquarter_phone_no",
       "social_links",
     ];
 
