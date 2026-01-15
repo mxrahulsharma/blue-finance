@@ -51,6 +51,12 @@ coverage/
 
 # Firebase service account (sensitive)
 **/firebase-service-account.json
+back-end/src/config/firebase-service-account.json
+
+# Environment files
+back-end/.env
+front-end/.env
+.env
 
 # Package lock (optional - some prefer to commit this)
 # package-lock.json
