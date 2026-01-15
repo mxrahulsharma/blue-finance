@@ -33,17 +33,37 @@ const Dashboard = () => {
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
-  const fetchData = async () => {
+  const fetchJobStats = useCallback(async () => {
+    try {
+      setLoadingStats(true);
+      const response = await jobApi.getJobStats();
+      setJobStats(response?.data?.stats || {
+        total_jobs: 0,
+        active_jobs: 0,
+        total_applications: 0,
+      });
+    } catch (error) {
+      console.error('Error fetching job stats:', error);
+      setJobStats({
+        total_jobs: 0,
+        active_jobs: 0,
+        total_applications: 0,
+      });
+    } finally {
+      setLoadingStats(false);
+    }
+  }, []);
+
+  const fetchData = useCallback(async () => {
     try {
       await dispatch(fetchCompanyProfile()).unwrap().catch(err => {
         console.error('Error fetching company profile:', err);
-        // Don't block rendering if company fetch fails
       });
       fetchJobStats();
     } catch (error) {
       console.error('Error in fetchData:', error);
     }
-  };
+  }, [dispatch, fetchJobStats]);
 
   useEffect(() => {
     // Fetch data on mount and when location changes (navigation)
@@ -58,7 +78,7 @@ const Dashboard = () => {
     return () => {
       window.removeEventListener('focus', handleFocus);
     };
-  }, [dispatch, location.pathname]); // Refetch when pathname changes
+  }, [dispatch, location.pathname, fetchData]); // Refetch when pathname changes
 
   const fetchJobStats = async () => {
     try {
