@@ -1,7 +1,7 @@
 {
-  "name": "back-end",
+  "name": "genius-market-backend",
   "version": "1.0.0",
-  "description": "Company Registration Backend",
+  "description": "Genius Market - Talent Marketplace Backend API",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

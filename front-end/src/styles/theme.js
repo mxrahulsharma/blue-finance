@@ -3,9 +3,9 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#667eea',
+      light: '#9f8aea',
+      dark: '#764ba2',
     },
     secondary: {
       main: '#dc004e',
@@ -24,7 +24,30 @@ const theme = createTheme({
       '"Helvetica Neue"',
       'Arial',
       'sans-serif',
+      '"Inter"',
     ].join(','),
+    h1: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h2: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h3: {
+      fontWeight: 700,
+      letterSpacing: '-0.02em',
+    },
+    h4: {
+      fontWeight: 700,
+      letterSpacing: '-0.01em',
+    },
+    h5: {
+      fontWeight: 600,
+    },
+    h6: {
+      fontWeight: 600,
+    },
     h4: {
       fontWeight: 600,
     },

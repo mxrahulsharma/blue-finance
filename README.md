@@ -1,8 +1,10 @@
-# Company Register Module
+# Genius Market
 
-A full-stack web application for company registration, profile management, and job posting built with Node.js, Express, PostgreSQL, React, and Firebase Authentication.
+A modern, full-stack talent marketplace platform connecting companies with exceptional talent. Built with cutting-edge technology - Node.js, Express, PostgreSQL, React, Redux, and Firebase Authentication.
 
-## 🚀 Features
+**Genius Market** - Where talent meets opportunity.
+
+## ✨ Key Features
 
 - **User Authentication**: Firebase-based authentication with email/password
 - **Company Registration**: Multi-step company registration process

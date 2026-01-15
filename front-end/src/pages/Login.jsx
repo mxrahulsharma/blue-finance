@@ -26,10 +26,15 @@ const Login = () => {
   return (
     <Container maxWidth="sm">
       <Box sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
-            Login
-          </Typography>
+        <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              Welcome to Genius Market
+            </Typography>
+            <Typography variant="h6" component="h2" color="text.secondary" gutterBottom>
+              Login to your account
+            </Typography>
+          </Box>
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth

@@ -76,15 +76,16 @@ const DashboardLayout = ({ children }) => {
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: '#1976d2',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
         }}
       >
         <Toolbar>
           {/* Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', mr: 4 }}>
             <WorkIcon sx={{ mr: 1, fontSize: 28 }} />
-            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-              Jobpilot
+            <Typography variant="h6" component="div" sx={{ fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
+              Genius Market
             </Typography>
           </Box>
 
@@ -131,7 +132,7 @@ const DashboardLayout = ({ children }) => {
             </Button>
 
             <IconButton onClick={handleProfileMenuOpen}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: '#fff', color: '#1976d2' }}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: '#fff', color: '#667eea' }}>
                 {user?.email?.[0]?.toUpperCase() || 'U'}
               </Avatar>
             </IconButton>
@@ -179,7 +180,7 @@ const DashboardLayout = ({ children }) => {
               letterSpacing: 1,
             }}
           >
-            EMPLOYERS DASHBOARD
+            GENIUS MARKET
           </Typography>
           <List>
             {menuItems.map((item) => {
