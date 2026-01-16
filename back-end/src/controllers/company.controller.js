@@ -3,20 +3,39 @@ import { pool } from "../config/db.js";
 import { uploadToCloudinary } from "../services/cloudinary.service.js";
 import { AppError } from "../utils/AppError.js";
 
-
 /* =========================
    REGISTER COMPANY
 ========================= */
 export const registerCompany = async (req, res, next) => {
+  const client = await pool.connect();
+  
   try {
+    await client.query('BEGIN');
+    
     const userId = req.user.id;
 
-    const exists = await pool.query(
+    // Check if user already has a company
+    const userCheck = await client.query(
+      "SELECT company_id FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userCheck.rows[0]?.company_id) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: "User already has a company linked",
+      });
+    }
+
+    // Check if company already exists for this user
+    const companyCheck = await client.query(
       "SELECT id FROM company_profile WHERE owner_id = $1",
       [userId]
     );
 
-    if (exists.rows.length) {
+    if (companyCheck.rows.length) {
+      await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
         message: "Company already registered for this user",
@@ -29,6 +48,13 @@ export const registerCompany = async (req, res, next) => {
       organization_type,
       team_size,
       company_website,
+      map_location_url,
+      company_vision,
+      careers_link,
+      headquarter_phone_no,
+      social_links,
+      headquarter_mail_id,
+      company_app_link,
     } = req.body;
 
     // ✅ SANITIZE FREE TEXT
@@ -37,11 +63,20 @@ export const registerCompany = async (req, res, next) => {
       allowedAttributes: {},
     });
 
-    const result = await pool.query(
+    const sanitized_company_vision = sanitizeHtml(company_vision || "", {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
+
+    // Insert company profile
+    const companyResult = await client.query(
       `
       INSERT INTO company_profile
-      (company_name, industry_type, organizations_type, team_size, about_company, company_website, owner_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      (company_name, industry_type, organizations_type, team_size, about_company, 
+       company_website, map_location_url, company_vision, careers_link, 
+       headquarter_phone_no, social_links, headquarter_mail_id, 
+       company_app_link, owner_id, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *
       `,
       [
@@ -50,17 +85,39 @@ export const registerCompany = async (req, res, next) => {
         organization_type,
         team_size,
         about_company,
-        company_website,
+        company_website || null,
+        map_location_url || null,
+        sanitized_company_vision || null,
+        careers_link || null,
+        headquarter_phone_no || null,
+        social_links || null,
+        headquarter_mail_id || null,
+        company_app_link || null,
         userId,
       ]
     );
 
+    const companyId = companyResult.rows[0].id;
+
+    // **CRITICAL FIX** - Update users table with company_id
+    await client.query(
+      `UPDATE users SET company_id = $1 WHERE id = $2`,
+      [companyId, userId]
+    );
+
+    await client.query('COMMIT');
+
     res.status(201).json({
       success: true,
-      company: result.rows[0],
+      message: 'Company registered successfully',
+      company: companyResult.rows[0],
     });
   } catch (error) {
-    next(new AppError(error.message, 500));
+    await client.query('ROLLBACK');
+    console.error('Error registering company:', error);
+    next(new AppError(error.message || 'Failed to register company', 500));
+  } finally {
+    client.release();
   }
 };
 
@@ -88,6 +145,7 @@ export const getCompanyProfile = async (req, res, next) => {
       company: result.rows[0],
     });
   } catch (error) {
+    console.error('Error fetching company profile:', error);
     next(new AppError("Company not found", 404));
   }
 };
@@ -121,6 +179,8 @@ export const updateCompanyProfile = async (req, res, next) => {
       "map_location_url": "map_location_url",
       "careers_link": "careers_link",
       "headquarter_phone_no": "headquarter_phone_no",
+      "headquarter_mail_id": "headquarter_mail_id",
+      "company_app_link": "company_app_link",
       "social_links": "social_links",
     };
 
@@ -133,6 +193,8 @@ export const updateCompanyProfile = async (req, res, next) => {
       "map_location_url",
       "careers_link",
       "headquarter_phone_no",
+      "headquarter_mail_id",
+      "company_app_link",
       "social_links",
     ];
 
@@ -166,8 +228,8 @@ export const updateCompanyProfile = async (req, res, next) => {
     });
 
     if (!updates.length) {
-        console.log('No valid fields to update');
-        return next(new AppError("No valid fields to update", 400));
+      console.log('No valid fields to update');
+      return next(new AppError("No valid fields to update", 400));
     }
 
     console.log('Update query fields:', updates);
@@ -206,13 +268,26 @@ export const uploadLogo = async (req, res, next) => {
     const userId = req.user.id;
 
     if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ 
+        success: false,
+        message: "No file uploaded" 
+      });
+    }
+
+    // Check if company exists
+    const companyCheck = await pool.query(
+      "SELECT id FROM company_profile WHERE owner_id = $1",
+      [userId]
+    );
+
+    if (!companyCheck.rows.length) {
+      return next(new AppError("Company profile not found", 404));
     }
 
     const result = await uploadToCloudinary(req.file.buffer, "company/logo");
 
     await pool.query(
-      "UPDATE company_profile SET company_logo_url = $1 WHERE owner_id = $2",
+      "UPDATE company_profile SET company_logo_url = $1, updated_at = CURRENT_TIMESTAMP WHERE owner_id = $2",
       [result.secure_url, userId]
     );
 
@@ -221,7 +296,8 @@ export const uploadLogo = async (req, res, next) => {
       company_logo_url: result.secure_url,
     });
   } catch (error) {
-    next(new AppError(error.message, 500));
+    console.error('Error uploading logo:', error);
+    next(new AppError(error.message || "Failed to upload logo", 500));
   }
 };
 
@@ -233,13 +309,26 @@ export const uploadBanner = async (req, res, next) => {
     const userId = req.user.id;
 
     if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ 
+        success: false,
+        message: "No file uploaded" 
+      });
+    }
+
+    // Check if company exists
+    const companyCheck = await pool.query(
+      "SELECT id FROM company_profile WHERE owner_id = $1",
+      [userId]
+    );
+
+    if (!companyCheck.rows.length) {
+      return next(new AppError("Company profile not found", 404));
     }
 
     const result = await uploadToCloudinary(req.file.buffer, "company/banner");
 
     await pool.query(
-      "UPDATE company_profile SET company_banner_url = $1 WHERE owner_id = $2",
+      "UPDATE company_profile SET company_banner_url = $1, updated_at = CURRENT_TIMESTAMP WHERE owner_id = $2",
       [result.secure_url, userId]
     );
 
@@ -248,7 +337,8 @@ export const uploadBanner = async (req, res, next) => {
       company_banner_url: result.secure_url,
     });
   } catch (error) {
-    next(new AppError(error.message, 500));
+    console.error('Error uploading banner:', error);
+    next(new AppError(error.message || "Failed to upload banner", 500));
   }
 };
 
@@ -257,36 +347,52 @@ export const uploadBanner = async (req, res, next) => {
 ========================= */
 export const getAllCompanies = async (req, res, next) => {
   try {
-    const { search, industry_type } = req.query;
+    const { search, industry_type, page = 1, limit = 10 } = req.query;
+    
+    const offset = (page - 1) * limit;
     
     let query = "SELECT * FROM company_profile WHERE 1=1";
+    let countQuery = "SELECT COUNT(*) FROM company_profile WHERE 1=1";
     const params = [];
     let paramCount = 0;
 
     // Add search filter
     if (search) {
       paramCount++;
-      query += ` AND (company_name ILIKE $${paramCount} OR about_company ILIKE $${paramCount} OR industry_type ILIKE $${paramCount})`;
+      const searchCondition = ` AND (company_name ILIKE $${paramCount} OR about_company ILIKE $${paramCount} OR industry_type ILIKE $${paramCount})`;
+      query += searchCondition;
+      countQuery += searchCondition;
       params.push(`%${search}%`);
     }
 
     // Add industry filter
     if (industry_type) {
       paramCount++;
-      query += ` AND industry_type = $${paramCount}`;
+      const industryCondition = ` AND industry_type = $${paramCount}`;
+      query += industryCondition;
+      countQuery += industryCondition;
       params.push(industry_type);
     }
 
-    query += " ORDER BY created_at DESC";
+    // Get total count
+    const countResult = await pool.query(countQuery, params);
+    const totalCount = parseInt(countResult.rows[0].count);
 
-    const result = await pool.query(query, params);
+    // Add pagination
+    query += ` ORDER BY created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+    
+    const result = await pool.query(query, [...params, limit, offset]);
 
     res.json({
       success: true,
       companies: result.rows,
       count: result.rows.length,
+      total: totalCount,
+      page: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
     });
   } catch (error) {
-    next(new AppError(error.message, 500));
+    console.error('Error fetching companies:', error);
+    next(new AppError(error.message || "Failed to fetch companies", 500));
   }
 };

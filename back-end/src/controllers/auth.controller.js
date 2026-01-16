@@ -56,7 +56,9 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     const result = await pool.query(
-      "SELECT id, email, password, first_name, last_name FROM users WHERE email = $1",
+      `SELECT id, email, password, first_name, last_name, company_id
+       FROM users
+       WHERE email = $1`,
       [email]
     );
 
@@ -77,7 +79,12 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = signToken({ id: user.id, email: user.email });
+    // ✅ INCLUDE company_id IN JWT
+    const token = signToken({
+      id: user.id,
+      email: user.email,
+      company_id: user.company_id,
+    });
 
     return res.json({
       success: true,
@@ -87,6 +94,7 @@ export const login = async (req, res) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        company_id: user.company_id,
       },
     });
   } catch (err) {
@@ -97,6 +105,7 @@ export const login = async (req, res) => {
     });
   }
 };
+
 
 /**
  * Firebase sign-in endpoint for Postman testing

@@ -1,6 +1,25 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authApi } from '../../api/authApi.js';
 
+/* =========================
+   Helpers (IMPORTANT)
+========================= */
+const normalizeUser = (user) => {
+  if (!user) return null;
+
+  return {
+    id: user.id || user.uid || null,
+    email: user.email || null,
+    first_name: user.first_name || null,
+    last_name: user.last_name || null,
+    company_id: user.company_id || null,
+    provider: user.provider || 'local',
+  };
+};
+
+/* =========================
+   Initial State
+========================= */
 const initialState = {
   user: null,
   token: null,
@@ -9,13 +28,15 @@ const initialState = {
   error: null,
 };
 
-// Async thunks using createAsyncThunk (supports .unwrap())
+/* =========================
+   Thunks
+========================= */
 export const signIn = createAsyncThunk(
   'auth/signIn',
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const result = await authApi.signIn(email, password);
-      return result;
+      return result; // { user, token }
     } catch (error) {
       return rejectWithValue(error.message || 'Sign in failed');
     }
@@ -27,7 +48,7 @@ export const signUp = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const result = await authApi.signUp(email, password);
-      return result;
+      return result; // { user, token }
     } catch (error) {
       return rejectWithValue(error.message || 'Sign up failed');
     }
@@ -39,13 +60,16 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await authApi.signOut();
-      return null;
+      return true;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || 'Logout failed');
     }
   }
 );
 
+/* =========================
+   Slice
+========================= */
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -56,22 +80,20 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     },
+
+    // Useful for restoring auth from localStorage
     setAuthState: (state, action) => {
-      if (action.payload) {
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.isAuthenticated = true;
-        state.error = null;
-      } else {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.error = null;
-      }
+      const { user, token } = action.payload || {};
+
+      state.user = normalizeUser(user);
+      state.token = token || null;
+      state.isAuthenticated = Boolean(user && token);
+      state.error = null;
     },
   },
+
   extraReducers: (builder) => {
-    // signIn
+    /* ---------- SIGN IN ---------- */
     builder
       .addCase(signIn.pending, (state) => {
         state.loading = true;
@@ -79,8 +101,8 @@ const authSlice = createSlice({
       })
       .addCase(signIn.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = normalizeUser(action.payload.user);
+        state.token = action.payload.token || null;
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -89,7 +111,7 @@ const authSlice = createSlice({
         state.error = action.payload;
       });
 
-    // signUp
+    /* ---------- SIGN UP ---------- */
     builder
       .addCase(signUp.pending, (state) => {
         state.loading = true;
@@ -97,8 +119,8 @@ const authSlice = createSlice({
       })
       .addCase(signUp.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.user = normalizeUser(action.payload.user);
+        state.token = action.payload.token || null;
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -107,7 +129,7 @@ const authSlice = createSlice({
         state.error = action.payload;
       });
 
-    // logout
+    /* ---------- LOGOUT ---------- */
     builder
       .addCase(logout.pending, (state) => {
         state.loading = true;
@@ -127,5 +149,4 @@ const authSlice = createSlice({
 });
 
 export const { clearUser, setAuthState } = authSlice.actions;
-
 export default authSlice.reducer;
