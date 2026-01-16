@@ -39,7 +39,16 @@ export const updateCompanyProfile = createAsyncThunk(
       const response = await companyApi.updateCompanyProfile(data);
       return response.data.company;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      // Better error extraction - handle validation errors and other error types
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update company profile';
+      const errorDetails = {
+        message: errorMessage,
+        status: error.response?.status,
+        errors: error.response?.data?.errors,
+        fullError: error.response?.data,
+      };
+      console.error('Company update error:', errorDetails);
+      return rejectWithValue(errorMessage);
     }
   }
 );

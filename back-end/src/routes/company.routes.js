@@ -87,6 +87,7 @@ router.put(
         throw new Error("Careers link must be a valid URL");
       }
     }),
+    body("social_links").optional(),
   ],
   validate,
   updateCompanyProfile

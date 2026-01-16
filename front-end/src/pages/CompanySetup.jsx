@@ -172,10 +172,21 @@ const CompanySetup = () => {
     
     try {
       // Filter out empty strings and undefined values to avoid validation errors
+      // Also handle null and empty objects/arrays
       const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
-        if (value !== '' && value !== undefined && value !== null) {
-          acc[key] = value;
+        // Skip empty strings, null, undefined
+        if (value === '' || value === undefined || value === null) {
+          return acc;
         }
+        // Skip empty objects
+        if (typeof value === 'object' && Object.keys(value).length === 0) {
+          return acc;
+        }
+        // Skip empty arrays
+        if (Array.isArray(value) && value.length === 0) {
+          return acc;
+        }
+        acc[key] = value;
         return acc;
       }, {});
       
@@ -217,20 +228,30 @@ const CompanySetup = () => {
         payload: error?.payload,
       });
       
-      // Handle different error types
+      // Handle different error types - improved error extraction
       let errorMsg = 'Failed to update company information. Please try again.';
       
-      if (error?.response?.data?.message) {
-        errorMsg = error.response.data.message;
-      } else if (error?.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        // Handle validation errors
-        errorMsg = error.response.data.errors.map(err => err.msg || err.message).join(', ');
-      } else if (error?.message) {
-        errorMsg = error.message;
-      } else if (error?.payload) {
+      // Check if error.payload exists (from Redux rejectWithValue)
+      if (error?.payload) {
         errorMsg = typeof error.payload === 'string' ? error.payload : error.payload?.message || errorMsg;
       }
+      // Check axios response errors
+      else if (error?.response?.data) {
+        // Handle validation errors array
+        if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+          errorMsg = error.response.data.errors.map(err => err.msg || err.message || String(err)).join(', ');
+        }
+        // Handle error message
+        else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        }
+      }
+      // Fallback to error message
+      else if (error?.message) {
+        errorMsg = error.message;
+      }
       
+      console.error('Final error message:', errorMsg);
       setSaveError(errorMsg);
       toast.error(errorMsg);
     } finally {

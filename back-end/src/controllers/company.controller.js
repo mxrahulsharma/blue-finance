@@ -98,6 +98,8 @@ export const getCompanyProfile = async (req, res, next) => {
 export const updateCompanyProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    console.log('Update company profile request - userId:', userId);
+    console.log('Update company profile request - body:', JSON.stringify(req.body, null, 2));
 
     // Check if company profile exists for this user
     const companyCheck = await pool.query(
@@ -164,8 +166,12 @@ export const updateCompanyProfile = async (req, res, next) => {
     });
 
     if (!updates.length) {
+        console.log('No valid fields to update');
         return next(new AppError("No valid fields to update", 400));
     }
+
+    console.log('Update query fields:', updates);
+    console.log('Update values:', values);
 
     const query = `
       UPDATE company_profile
@@ -174,7 +180,9 @@ export const updateCompanyProfile = async (req, res, next) => {
       RETURNING *
     `;
 
+    console.log('Executing query:', query);
     const result = await pool.query(query, [...values, userId]);
+    console.log('Update successful, rows affected:', result.rows.length);
 
     if (!result.rows.length) {
       return next(new AppError("Company profile not found or update failed", 404));
